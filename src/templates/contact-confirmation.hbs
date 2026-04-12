@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Contacto</title>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #1c1c1c !important; }
+            .container { background-color: #2a2a2a !important; color: #e0e0e0 !important; }
+            .box { background-color: #3a3a3a !important; }
+            .text-muted { color: #bbbbbb !important; }
+        }
+    </style>
+</head>
+<body style="margin:0; padding:20px; background-color:#f4f6f8; font-family: Arial, sans-serif;">
+
+    <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" class="container"
+                       style="background:#ffffff; padding:30px; border-radius:10px;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td>
+                            <table width="100%">
+                                <tr>
+                                    <td align="left" style="font-size:22px; font-weight:bold; color:#333;">
+                                        Mensaje recibido
+                                    </td>
+                                    <td align="right">
+                                        <img src="cid:logoApp" width="140" style="display:block;">
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr><td height="20"></td></tr>
+
+                    <!-- Saludo -->
+                    <tr>
+                        <td style="color:#555;">
+                            Estimado(a) <strong>{{nombre}}</strong>,
+                        </td>
+                    </tr>
+
+                    <tr><td height="10"></td></tr>
+
+                    <tr>
+                        <td style="color:#555;">
+                            Gracias por contactarnos. Hemos recibido tu mensaje correctamente y un miembro de nuestro equipo se comunicará contigo a la brevedad posible.
+                        </td>
+                    </tr>
+
+                    <tr><td height="20"></td></tr>
+
+                    <!-- Resumen -->
+                    <tr>
+                        <td class="box" style="background:#f9fafb; padding:15px; border-radius:8px; border-left:4px solid #2a5298;">
+                            <p style="margin:0 0 8px 0;"><strong>Nombre:</strong> {{nombre}}</p>
+                            <p style="margin:0 0 8px 0;"><strong>Email:</strong> {{email}}</p>
+                            <p style="margin:0;"><strong>Asunto:</strong> {{asunto}}</p>
+                        </td>
+                    </tr>
+
+                    <tr><td height="20"></td></tr>
+
+                    <!-- Aviso -->
+                    <tr>
+                        <td style="color:#555;">
+                            Si tienes alguna consulta adicional o requieres atención urgente, puedes responder directamente a este correo.
+                        </td>
+                    </tr>
+
+                    <tr><td height="25"></td></tr>
+                    <tr>
+                        <td style="border-top:1px solid #ddd;"></td>
+                    </tr>
+                    <tr><td height="15"></td></tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" class="text-muted" style="font-size:12px; color:#888;">
+                            Este es un correo automático generado por la aplicación, por favor no responda a este mensaje.
+                        </td>
+                    </tr>
+                    <tr><td height="5"></td></tr>
+                    <tr>
+                        <td align="center" style="font-size:11px; color:#aaa;">
+                            {{year}} © Altamira Steel. Todos los derechos reservados.
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

@@ -1,6 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+﻿import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import sgMail from '@sendgrid/mail';
 import { SendMailDto } from './dto/send-mail.dto';
+import { TemplateService } from './services/template.service';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 type SendGridMailWithResidency = typeof sgMail & {
   setDataResidency?: (region: 'eu') => void;
@@ -8,6 +11,8 @@ type SendGridMailWithResidency = typeof sgMail & {
 
 @Injectable()
 export class AppService {
+  constructor(private readonly templateService: TemplateService) {}
+
   getHello(): string {
     return 'Hello World!';
   }
@@ -39,12 +44,23 @@ export class AppService {
     const subject =
       payload.subject?.trim() || 'Nuevo contacto desde formulario web';
     const sanitizedMessage = payload.message.trim();
+    const año = new Date().getFullYear();
+    const attachments = this.buildLogoAttachment();
 
     try {
+      // Email al equipo con el mensaje recibido
+      const adminHtml = this.templateService.render('contact-admin.hbs', {
+        nombre: payload.name,
+        email: payload.email,
+        asunto: subject,
+        mensaje: sanitizedMessage.replaceAll('\n', '<br/>'),
+        año,
+      });
+
       await sgMail.send({
         to: emailTo,
         from: emailFrom,
-        subject,
+        subject: `[CONTACTO WEB] ${subject}`,
         text: [
           'Nuevo mensaje recibido desde el frontend.',
           `Nombre: ${payload.name}`,
@@ -53,14 +69,20 @@ export class AppService {
           'Mensaje:',
           sanitizedMessage,
         ].join('\n'),
-        html: `
-          <h2>Nuevo mensaje recibido desde el frontend</h2>
-          <p><strong>Nombre:</strong> ${payload.name}</p>
-          <p><strong>Email:</strong> ${payload.email}</p>
-          <p><strong>Mensaje:</strong></p>
-          <p>${sanitizedMessage.replaceAll('\n', '<br/>')}</p>
-        `,
+        html: adminHtml,
+        ...(attachments.length && { attachments }),
       });
+
+      // Confirmacion al remitente
+      const confirmHtml = this.templateService.render(
+        'contact-confirmation.hbs',
+        {
+          nombre: payload.name,
+          email: payload.email,
+          asunto: subject,
+          año,
+        },
+      );
 
       await sgMail.send({
         to: payload.email,
@@ -74,19 +96,45 @@ export class AppService {
           'Saludos,',
           'Equipo Altamira Steel',
         ].join('\n'),
-        html: `
-          <p>Hola ${payload.name},</p>
-          <p>
-            Gracias por contactarnos. Hemos recibido tu mensaje y te responderemos
-            en breve.
-          </p>
-          <p>Saludos,<br/>Equipo Altamira Steel</p>
-        `,
+        html: confirmHtml,
+        ...(attachments.length && { attachments }),
       });
     } catch {
       throw new InternalServerErrorException(
         'No se pudo enviar el correo en este momento.',
       );
     }
+  }
+
+  private buildLogoAttachment(): Array<{
+    content: string;
+    filename: string;
+    type: string;
+    disposition: string;
+    contentId: string;
+  }> {
+    const logoPath = process.env.APP_LOGO_PATH;
+    if (!logoPath || !fs.existsSync(logoPath)) return [];
+
+    const ext = path.extname(logoPath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.svg': 'image/svg+xml',
+    };
+
+    const mimeType = mimeTypes[ext];
+    if (!mimeType) return [];
+
+    return [
+      {
+        content: fs.readFileSync(logoPath).toString('base64'),
+        filename: `logo${ext}`,
+        type: mimeType,
+        disposition: 'inline',
+        contentId: 'logoApp',
+      },
+    ];
   }
 }

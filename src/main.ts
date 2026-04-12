@@ -1,10 +1,12 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const logger = new Logger('NestApplication');
 
   const apiPrefix = process.env.API_PREFIX ?? 'api';
   const swaggerPath = process.env.SWAGGER_PATH ?? 'docs';
@@ -45,5 +47,7 @@ async function bootstrap() {
   SwaggerModule.setup(swaggerPath, app, swaggerDocument);
 
   await app.listen(process.env.PORT ?? 3000);
+
+  logger.log(`Server running in ${await app.getUrl()}/${swaggerPath}`);
 }
 void bootstrap();

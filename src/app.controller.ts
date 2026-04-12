@@ -15,7 +15,6 @@ export class AppController {
   async sendContactEmail(
     @Body() body: SendMailDto,
   ): Promise<{ message: string }> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     await this.appService.sendContactEmail(body);
 
     return {
