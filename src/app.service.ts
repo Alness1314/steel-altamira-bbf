@@ -62,7 +62,7 @@ export class AppService {
         from: emailFrom,
         subject: `[CONTACTO WEB] ${subject}`,
         text: [
-          'Nuevo mensaje recibido desde el frontend.',
+          'Nuevo mensaje recibido desde el sitio web Altamirasteel.com',
           `Nombre: ${payload.name}`,
           `Email: ${payload.email}`,
           '',
@@ -113,28 +113,49 @@ export class AppService {
     disposition: string;
     contentId: string;
   }> {
-    const logoPath = process.env.APP_LOGO_PATH;
-    if (!logoPath || !fs.existsSync(logoPath)) return [];
-
-    const ext = path.extname(logoPath).toLowerCase();
     const mimeTypes: Record<string, string> = {
       '.png': 'image/png',
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
-      '.svg': 'image/svg+xml',
     };
 
-    const mimeType = mimeTypes[ext];
-    if (!mimeType) return [];
+    // 1. Intentar con APP_LOGO_PATH (ruta absoluta o relativa al CWD)
+    const envPath = process.env.APP_LOGO_PATH;
+    const candidates: string[] = [];
 
-    return [
-      {
-        content: fs.readFileSync(logoPath).toString('base64'),
-        filename: `logo${ext}`,
-        type: mimeType,
-        disposition: 'inline',
-        contentId: 'logoApp',
-      },
-    ];
+    if (envPath) {
+      candidates.push(path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath));
+    }
+
+    // 2. Fallback: buscar PNG en la carpeta assets junto al archivo compilado
+    const assetsDir = path.join(__dirname, 'assets');
+    if (fs.existsSync(assetsDir)) {
+      for (const file of fs.readdirSync(assetsDir)) {
+        if (['.png', '.jpg', '.jpeg'].includes(path.extname(file).toLowerCase())) {
+          candidates.push(path.join(assetsDir, file));
+          break;
+        }
+      }
+    }
+
+    for (const logoPath of candidates) {
+      if (!fs.existsSync(logoPath)) continue;
+
+      const ext = path.extname(logoPath).toLowerCase();
+      const mimeType = mimeTypes[ext];
+      if (!mimeType) continue;
+
+      return [
+        {
+          content: fs.readFileSync(logoPath).toString('base64'),
+          filename: `logo${ext}`,
+          type: mimeType,
+          disposition: 'inline',
+          contentId: 'logoApp',
+        },
+      ];
+    }
+
+    return [];
   }
 }
