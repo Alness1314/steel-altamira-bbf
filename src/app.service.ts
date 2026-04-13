@@ -99,10 +99,10 @@ export class AppService {
         html: confirmHtml,
         ...(attachments.length && { attachments }),
       });
-    } catch {
-      throw new InternalServerErrorException(
-        'No se pudo enviar el correo en este momento.',
-      );
+    } catch (error: unknown) {
+      const details = this.extractSendGridErrorDetails(error);
+      console.error('Error al enviar correo:', details);
+      throw new InternalServerErrorException(details);
     }
   }
 
@@ -111,7 +111,7 @@ export class AppService {
     filename: string;
     type: string;
     disposition: string;
-    contentId: string;
+    content_id: string;
   }> {
     const mimeTypes: Record<string, string> = {
       '.png': 'image/png',
@@ -124,14 +124,20 @@ export class AppService {
     const candidates: string[] = [];
 
     if (envPath) {
-      candidates.push(path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath));
+      candidates.push(
+        path.isAbsolute(envPath)
+          ? envPath
+          : path.resolve(process.cwd(), envPath),
+      );
     }
 
     // 2. Fallback: buscar PNG en la carpeta assets junto al archivo compilado
     const assetsDir = path.join(__dirname, 'assets');
     if (fs.existsSync(assetsDir)) {
       for (const file of fs.readdirSync(assetsDir)) {
-        if (['.png', '.jpg', '.jpeg'].includes(path.extname(file).toLowerCase())) {
+        if (
+          ['.png', '.jpg', '.jpeg'].includes(path.extname(file).toLowerCase())
+        ) {
           candidates.push(path.join(assetsDir, file));
           break;
         }
@@ -151,11 +157,42 @@ export class AppService {
           filename: `logo${ext}`,
           type: mimeType,
           disposition: 'inline',
-          contentId: 'logoApp',
+          content_id: 'logoApp',
         },
       ];
     }
 
     return [];
+  }
+
+  private extractSendGridErrorDetails(error: unknown): string {
+    const fallback = 'No se pudo enviar el correo en este momento.';
+
+    if (!error || typeof error !== 'object') return fallback;
+
+    const maybeError = error as {
+      response?: {
+        body?: {
+          errors?: Array<{ message?: string; field?: string }>;
+        };
+      };
+      message?: string;
+    };
+
+    const errors = maybeError.response?.body?.errors;
+    if (!errors?.length) return maybeError.message ?? fallback;
+
+    const normalized = errors
+      .map((e) => {
+        const msg = e.message?.trim();
+        const field = e.field?.trim();
+        if (msg && field) return `${msg} (field: ${field})`;
+        return msg || null;
+      })
+      .filter((v): v is string => Boolean(v));
+
+    if (!normalized.length) return fallback;
+
+    return `Error de SendGrid: ${normalized.join(' | ')}`;
   }
 }
